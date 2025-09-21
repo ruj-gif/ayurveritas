@@ -1,0 +1,807 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+export type Language = 'en' | 'hi' | 'mr';
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+// Translation data
+const translations = {
+  en: {
+    // Common
+    'welcome': 'Welcome',
+    'dashboard': 'Dashboard',
+    'quickActions': 'Quick Actions',
+    'recentBatches': 'Recent Batches',
+    'viewAll': 'View All',
+    'pending': 'Pending',
+    'verified': 'Verified',
+    'rejected': 'Rejected',
+    'total': 'Total',
+    'earnings': 'Earnings',
+    'status': 'Status',
+    'date': 'Date',
+    'quantity': 'Quantity',
+    'location': 'Location',
+    'notes': 'Notes',
+    'submit': 'Submit',
+    'cancel': 'Cancel',
+    'save': 'Save',
+    'edit': 'Edit',
+    'delete': 'Delete',
+    'view': 'View',
+    'search': 'Search',
+    'upload': 'Upload',
+    'download': 'Download',
+    'preview': 'Preview',
+    'success': 'Success',
+    'error': 'Error',
+    'warning': 'Warning',
+    'info': 'Info',
+    
+    // Farmer Dashboard
+    'farmerWelcome': 'Welcome back, {name}! 🌱',
+    'farmerSubtitle': 'Your harvest journey continues. Track your batches and earnings in real-time.',
+    'totalEarnings': 'Total Earnings',
+    'totalBatches': 'Total Batches',
+    'allRegisteredHarvests': 'All registered harvests',
+    'approvedByDistributors': 'Approved by distributors',
+    'awaitingVerification': 'Awaiting verification',
+    'pendingPayments': 'pending',
+    'fastTrackFarming': 'Fast track your farming operations',
+    'registerNewHarvest': 'Register New Harvest',
+    'generateQRCodes': 'Generate QR Codes',
+    'viewAnalytics': 'View Analytics',
+    'yourLatestRegisteredHarvests': 'Your latest registered harvests',
+    'verificationRate': 'Verification Rate',
+    'batchApprovalSuccessRate': 'Batch approval success rate',
+    'successRate': 'Success Rate',
+    'recognition': 'Recognition',
+    'yourEarnedBadgesAndCertifications': 'Your earned badges and certifications',
+    'viewAllAchievements': 'View All Achievements',
+    
+    // Distributor Dashboard
+    'distributorWelcome': 'Quality Control Center 🔍',
+    'distributorSubtitle': 'Ensure authenticity and quality of herbal products through verification.',
+    'verificationRate': 'Verification Rate',
+    'pendingReview': 'Pending Review',
+    'awaitingYourVerification': 'Awaiting your verification',
+    'qualityApproved': 'Quality approved',
+    'qualityIssuesFound': 'Quality issues found',
+    'allTimeBatches': 'All time batches',
+    'streamlineVerificationProcess': 'Streamline your verification process',
+    'scanAndUpdate': 'Scan & Update',
+    'uploadLabReport': 'Upload Lab Report',
+    'pendingVerifications': 'Pending Verifications',
+    'batchesAwaitingQualityReview': 'Batches awaiting your quality review',
+    'recentlyVerified': 'Recently Verified',
+    'yourLatestQualityApprovals': 'Your latest quality approvals',
+    'viewHistory': 'View History',
+    'qualityStandards': 'Quality Standards',
+    'yourVerificationPerformance': 'Your verification performance',
+    'accuracyScore': 'Accuracy Score',
+    'farmerSatisfaction': 'Farmer Satisfaction',
+    'verificationImpact': 'Verification Impact',
+    'yourContributionToSupplyChain': 'Your contribution to the supply chain',
+    'batchesVerified': 'Batches Verified',
+    'valueSecured': 'Value Secured',
+    'farmersSupported': 'Farmers Supported',
+    
+    // KYC
+    'kycVerification': 'KYC Verification',
+    'kycStatus': 'KYC Status',
+    'kycPending': 'Pending',
+    'kycVerified': 'Verified',
+    'kycRejected': 'Rejected',
+    'completeKycBeforeAction': 'Complete KYC before you can {action}',
+    'fullName': 'Full Name',
+    'aadhaarPanNumber': 'Aadhaar / PAN Number',
+    'mobileNumber': 'Mobile Number',
+    'address': 'Address',
+    'idProofUpload': 'ID Proof Upload (PDF or Image)',
+    'companyName': 'Company Name',
+    'gstNumber': 'GST Number',
+    'panNumber': 'PAN Number',
+    'contactPersonName': 'Contact Person Name',
+    'businessProofUpload': 'ID/Business Proof Upload (PDF or Image)',
+    
+    // Harvest Registration
+    'registerHarvest': 'Register Harvest',
+    'registerNewHarvest': 'Register New Harvest',
+    'cropHerbName': 'Crop/Herb Name',
+    'harvestQuantity': 'Harvest Quantity',
+    'harvestDate': 'Harvest Date',
+    'farmLocation': 'Farm Location',
+    'harvestRegisteredSuccessfully': '✅ Harvest registered successfully!',
+    'harvestRegisteredSuccessfullyMessage': 'Harvest registered successfully!',
+    'viewDetails': 'View Details',
+    'editUpdate': 'Edit/Update',
+    'viewOnMap': 'View on Map',
+    
+    // Batch Management
+    'batchManagement': 'Batch Management',
+    'newBatch': 'New Batch',
+    'updateBatch': 'Update Batch',
+    'batchId': 'Batch ID',
+    'herbType': 'Herb Type',
+    'transferTo': 'Transfer To',
+    'transferType': 'Transfer Type',
+    'anotherDistributor': 'Another Distributor',
+    'retailer': 'Retailer',
+    'consumer': 'Consumer',
+    'recipientName': 'Recipient Name',
+    'transferNotes': 'Transfer Notes',
+    'updateTransferBatch': 'Update & Transfer Batch',
+    
+    // Lab Reports
+    'labReportManagement': 'Lab Report Management',
+    'uploadLabReport': 'Upload Lab Report',
+    'previewReport': 'Preview Report',
+    'reportFile': 'Report File',
+    'uploadDate': 'Upload Date',
+    'labReportAvailable': 'Lab Report Available',
+    'noReport': 'No Report',
+    
+    // Scan & Update
+    'scanAndVerify': 'Scan & Verify',
+    'scanAndUpdate': 'Scan & Update',
+    'scanQrCode': 'Scan QR Code',
+    'updateSupplyChainTransfers': 'Update supply chain transfers',
+    'farmerToDistributor': 'Farmer → Distributor',
+    'distributorToAnother': 'Distributor → Another Distributor / Retailer / Consumer',
+    'updateSupplyChainTraceability': 'Update supply chain traceability accordingly',
+    
+    // Messages
+    'harvestRegisteredSuccessfullyFull': 'Harvest registered successfully!',
+    'batchUpdatedSuccessfully': 'Batch updated successfully!',
+    'kycCompletedSuccessfully': 'KYC completed successfully!',
+    'labReportUploadedSuccessfully': 'Lab report uploaded successfully!',
+    'locationCaptured': 'Location Captured',
+    'gpsCoordinatesRecorded': 'GPS coordinates have been recorded.',
+    'photoUploaded': 'Photo Uploaded',
+    'harvestPhotoAttached': 'Harvest photo has been attached.',
+    'fileTooLarge': 'File Too Large',
+    'pleaseSelectSmallerImage': 'Please select an image smaller than 5MB.',
+    'geolocationNotSupported': 'Geolocation Not Supported',
+    'browserNotSupportLocation': 'Your browser doesn\'t support location services.',
+    'locationError': 'Location Error',
+    'unableToGetLocation': 'Unable to get your location. Please ensure location services are enabled.',
+    'incompleteInformation': 'Incomplete Information',
+    'pleaseFillAllRequiredFields': 'Please fill in all required fields including location.',
+    'enterBatchId': 'Enter Batch ID',
+    'pleaseEnterBatchId': 'Please enter a batch ID to search.',
+    'batchFound': 'Batch Found! ✅',
+    'batchNotFound': 'Batch Not Found',
+    'batchIdNotExist': 'This batch ID doesn\'t exist in our system.',
+    'pleaseSearchBatchAndSpecifyTransfer': 'Please search for a batch and specify transfer destination.',
+    
+    // Units
+    'kg': 'Kilograms (kg)',
+    'tons': 'Tons',
+    'pounds': 'Pounds (lbs)',
+    'grams': 'Grams (g)',
+    
+    // Time
+    'today': 'Today',
+    'yesterday': 'Yesterday',
+    'thisWeek': 'This Week',
+    'thisMonth': 'This Month',
+    'thisYear': 'This Year',
+    
+    // Actions
+    'register': 'Register',
+    'update': 'Update',
+    'transfer': 'Transfer',
+    'verify': 'Verify',
+    'approve': 'Approve',
+    'reject': 'Reject',
+    'review': 'Review',
+    'process': 'Process',
+    'complete': 'Complete',
+    'incomplete': 'Incomplete',
+    
+    // Status
+    'active': 'Active',
+    'inactive': 'Inactive',
+    'processing': 'Processing',
+    'completed': 'Completed',
+    'failed': 'Failed',
+    'cancelled': 'Cancelled',
+    
+    // Language Selector
+    'selectLanguage': 'Select Language',
+    'english': 'English',
+    'hindi': 'हिंदी',
+    'marathi': 'मराठी',
+    
+    // Additional missing keys
+    'paid': 'Paid',
+    'harvestPhoto': 'Harvest Photo',
+    'captureGpsLocation': 'Capture GPS Location',
+    'findBatchToUpdate': 'Find Batch to Update',
+    'currentBatchInformation': 'Current Batch Information',
+    'currentStatus': 'Current Status',
+    'transferDetails': 'Transfer Details',
+    'updateStatus': 'Update Status',
+    'findBatch': 'Find Batch',
+    'uploadedLabReports': 'Uploaded Lab Reports',
+    'noLabReportsUploaded': 'No lab reports uploaded yet',
+    'batch': 'Batch',
+    'uploaded': 'Uploaded',
+    'labReportPreview': 'Lab Report Preview',
+    'uploadedOn': 'Uploaded on',
+    'openPdf': 'Open PDF',
+    'batchScanned': 'Batch Scanned! ✅',
+    'scanningQrCode': 'Scanning QR Code...',
+    'positionQrCodeInFrame': 'Position the QR code in the frame',
+    'cancelScan': 'Cancel Scan',
+    'clickToStartScanning': 'Click to start scanning',
+    'startQrScanner': 'Start QR Scanner',
+    'orEnterManually': 'Or enter manually',
+    'updateTransferDetailsForBatch': 'Update the transfer details for this batch',
+    'currentBatch': 'Current Batch',
+    'from': 'From',
+    'updatingTransfer': 'Updating Transfer...',
+    
+    // Map related translations
+    'selectFarmLocationOnMap': 'Select your farm location on the map',
+    'getCurrentLocation': 'Get Current Location',
+    'gettingLocation': 'Getting Location...',
+    'saveLocation': 'Save Location',
+    'locationSelected': 'Location Selected',
+    'locationSaved': 'Location Saved',
+    'farmLocationSaved': 'Farm location has been saved',
+    'clickOnMapToSelectLocation': 'Click on the map to select location',
+    'useGetCurrentLocationForGPS': 'Use "Get Current Location" for GPS coordinates',
+    'adjustMarkerByDragging': 'Adjust marker by dragging if needed'
+  },
+  
+  hi: {
+    // Common
+    'welcome': 'स्वागत',
+    'dashboard': 'डैशबोर्ड',
+    'quickActions': 'त्वरित कार्य',
+    'recentBatches': 'हाल के बैच',
+    'viewAll': 'सभी देखें',
+    'pending': 'लंबित',
+    'verified': 'सत्यापित',
+    'rejected': 'अस्वीकृत',
+    'total': 'कुल',
+    'earnings': 'आय',
+    'status': 'स्थिति',
+    'date': 'तारीख',
+    'quantity': 'मात्रा',
+    'location': 'स्थान',
+    'notes': 'नोट्स',
+    'submit': 'जमा करें',
+    'cancel': 'रद्द करें',
+    'save': 'सहेजें',
+    'edit': 'संपादित करें',
+    'delete': 'हटाएं',
+    'view': 'देखें',
+    'search': 'खोजें',
+    'upload': 'अपलोड करें',
+    'download': 'डाउनलोड करें',
+    'preview': 'पूर्वावलोकन',
+    'success': 'सफलता',
+    'error': 'त्रुटि',
+    'warning': 'चेतावनी',
+    'info': 'जानकारी',
+    
+    // Farmer Dashboard
+    'farmerWelcome': 'वापस स्वागत है, {name}! 🌱',
+    'farmerSubtitle': 'आपकी फसल की यात्रा जारी है। अपने बैच और आय को वास्तविक समय में ट्रैक करें।',
+    'totalEarnings': 'कुल आय',
+    'totalBatches': 'कुल बैच',
+    'allRegisteredHarvests': 'सभी पंजीकृत फसलें',
+    'approvedByDistributors': 'वितरकों द्वारा अनुमोदित',
+    'awaitingVerification': 'सत्यापन की प्रतीक्षा',
+    'pendingPayments': 'लंबित',
+    'fastTrackFarming': 'अपने कृषि कार्यों को तेजी से ट्रैक करें',
+    'registerNewHarvest': 'नई फसल पंजीकृत करें',
+    'generateQRCodes': 'QR कोड जेनरेट करें',
+    'viewAnalytics': 'एनालिटिक्स देखें',
+    'yourLatestRegisteredHarvests': 'आपकी नवीनतम पंजीकृत फसलें',
+    'verificationRate': 'सत्यापन दर',
+    'batchApprovalSuccessRate': 'बैच अनुमोदन सफलता दर',
+    'successRate': 'सफलता दर',
+    'recognition': 'मान्यता',
+    'yourEarnedBadgesAndCertifications': 'आपके अर्जित बैज और प्रमाणपत्र',
+    'viewAllAchievements': 'सभी उपलब्धियां देखें',
+    
+    // Distributor Dashboard
+    'distributorWelcome': 'गुणवत्ता नियंत्रण केंद्र 🔍',
+    'distributorSubtitle': 'सत्यापन के माध्यम से हर्बल उत्पादों की प्रामाणिकता और गुणवत्ता सुनिश्चित करें।',
+    'verificationRate': 'सत्यापन दर',
+    'pendingReview': 'लंबित समीक्षा',
+    'awaitingYourVerification': 'आपके सत्यापन की प्रतीक्षा',
+    'qualityApproved': 'गुणवत्ता अनुमोदित',
+    'qualityIssuesFound': 'गुणवत्ता की समस्याएं मिलीं',
+    'allTimeBatches': 'सभी समय के बैच',
+    'streamlineVerificationProcess': 'अपनी सत्यापन प्रक्रिया को सुव्यवस्थित करें',
+    'scanAndUpdate': 'स्कैन और अपडेट करें',
+    'uploadLabReport': 'प्रयोगशाला रिपोर्ट अपलोड करें',
+    'pendingVerifications': 'लंबित सत्यापन',
+    'batchesAwaitingQualityReview': 'गुणवत्ता समीक्षा की प्रतीक्षा में बैच',
+    'recentlyVerified': 'हाल ही में सत्यापित',
+    'yourLatestQualityApprovals': 'आपकी नवीनतम गुणवत्ता अनुमोदन',
+    'viewHistory': 'इतिहास देखें',
+    'qualityStandards': 'गुणवत्ता मानक',
+    'yourVerificationPerformance': 'आपका सत्यापन प्रदर्शन',
+    'accuracyScore': 'सटीकता स्कोर',
+    'farmerSatisfaction': 'किसान संतुष्टि',
+    'verificationImpact': 'सत्यापन प्रभाव',
+    'yourContributionToSupplyChain': 'आपूर्ति श्रृंखला में आपका योगदान',
+    'batchesVerified': 'सत्यापित बैच',
+    'valueSecured': 'सुरक्षित मूल्य',
+    'farmersSupported': 'समर्थित किसान',
+    
+    // KYC
+    'kycVerification': 'केवाईसी सत्यापन',
+    'kycStatus': 'केवाईसी स्थिति',
+    'kycPending': 'लंबित',
+    'kycVerified': 'सत्यापित',
+    'kycRejected': 'अस्वीकृत',
+    'completeKycBeforeAction': 'आप {action} करने से पहले केवाईसी पूरा करें',
+    'fullName': 'पूरा नाम',
+    'aadhaarPanNumber': 'आधार / पैन नंबर',
+    'mobileNumber': 'मोबाइल नंबर',
+    'address': 'पता',
+    'idProofUpload': 'आईडी प्रूफ अपलोड (PDF या इमेज)',
+    'companyName': 'कंपनी का नाम',
+    'gstNumber': 'जीएसटी नंबर',
+    'panNumber': 'पैन नंबर',
+    'contactPersonName': 'संपर्क व्यक्ति का नाम',
+    'businessProofUpload': 'आईडी/व्यापार प्रूफ अपलोड (PDF या इमेज)',
+    
+    // Harvest Registration
+    'registerHarvest': 'फसल पंजीकृत करें',
+    'registerNewHarvest': 'नई फसल पंजीकृत करें',
+    'cropHerbName': 'फसल/जड़ी-बूटी का नाम',
+    'harvestQuantity': 'फसल की मात्रा',
+    'harvestDate': 'फसल की तारीख',
+    'farmLocation': 'खेत का स्थान',
+    'harvestRegisteredSuccessfully': '✅ फसल सफलतापूर्वक पंजीकृत हुई!',
+    'harvestRegisteredSuccessfullyMessage': 'फसल सफलतापूर्वक पंजीकृत हुई!',
+    'viewDetails': 'विवरण देखें',
+    'editUpdate': 'संपादित/अपडेट करें',
+    'viewOnMap': 'मानचित्र पर देखें',
+    
+    // Batch Management
+    'batchManagement': 'बैच प्रबंधन',
+    'newBatch': 'नया बैच',
+    'updateBatch': 'बैच अपडेट करें',
+    'batchId': 'बैच आईडी',
+    'herbType': 'जड़ी-बूटी का प्रकार',
+    'transferTo': 'स्थानांतरित करें',
+    'transferType': 'स्थानांतरण प्रकार',
+    'anotherDistributor': 'दूसरा वितरक',
+    'retailer': 'खुदरा विक्रेता',
+    'consumer': 'उपभोक्ता',
+    'recipientName': 'प्राप्तकर्ता का नाम',
+    'transferNotes': 'स्थानांतरण नोट्स',
+    'updateTransferBatch': 'अपडेट और स्थानांतरित बैच',
+    
+    // Lab Reports
+    'labReportManagement': 'प्रयोगशाला रिपोर्ट प्रबंधन',
+    'uploadLabReport': 'प्रयोगशाला रिपोर्ट अपलोड करें',
+    'previewReport': 'रिपोर्ट पूर्वावलोकन',
+    'reportFile': 'रिपोर्ट फाइल',
+    'uploadDate': 'अपलोड तारीख',
+    'labReportAvailable': 'प्रयोगशाला रिपोर्ट उपलब्ध',
+    'noReport': 'कोई रिपोर्ट नहीं',
+    
+    // Scan & Update
+    'scanAndVerify': 'स्कैन और सत्यापित करें',
+    'scanAndUpdate': 'स्कैन और अपडेट करें',
+    'scanQrCode': 'QR कोड स्कैन करें',
+    'updateSupplyChainTransfers': 'आपूर्ति श्रृंखला स्थानांतरण अपडेट करें',
+    'farmerToDistributor': 'किसान → वितरक',
+    'distributorToAnother': 'वितरक → दूसरा वितरक / खुदरा विक्रेता / उपभोक्ता',
+    'updateSupplyChainTraceability': 'आपूर्ति श्रृंखला ट्रेसबिलिटी को तदनुसार अपडेट करें',
+    
+    // Messages
+    'harvestRegisteredSuccessfullyFull': 'फसल सफलतापूर्वक पंजीकृत हुई!',
+    'batchUpdatedSuccessfully': 'बैच सफलतापूर्वक अपडेट हुआ!',
+    'kycCompletedSuccessfully': 'केवाईसी सफलतापूर्वक पूरा हुआ!',
+    'labReportUploadedSuccessfully': 'प्रयोगशाला रिपोर्ट सफलतापूर्वक अपलोड हुई!',
+    'locationCaptured': 'स्थान कैप्चर किया गया',
+    'gpsCoordinatesRecorded': 'GPS निर्देशांक रिकॉर्ड किए गए हैं।',
+    'photoUploaded': 'फोटो अपलोड किया गया',
+    'harvestPhotoAttached': 'फसल की फोटो संलग्न की गई है।',
+    'fileTooLarge': 'फाइल बहुत बड़ी',
+    'pleaseSelectSmallerImage': 'कृपया 5MB से छोटी इमेज चुनें।',
+    'geolocationNotSupported': 'जियोलोकेशन समर्थित नहीं',
+    'browserNotSupportLocation': 'आपका ब्राउज़र लोकेशन सेवाओं का समर्थन नहीं करता।',
+    'locationError': 'स्थान त्रुटि',
+    'unableToGetLocation': 'आपका स्थान प्राप्त करने में असमर्थ। कृपया सुनिश्चित करें कि लोकेशन सेवाएं सक्षम हैं।',
+    'incompleteInformation': 'अधूरी जानकारी',
+    'pleaseFillAllRequiredFields': 'कृपया स्थान सहित सभी आवश्यक फील्ड भरें।',
+    'enterBatchId': 'बैच आईडी दर्ज करें',
+    'pleaseEnterBatchId': 'खोजने के लिए कृपया बैच आईडी दर्ज करें।',
+    'batchFound': 'बैच मिला! ✅',
+    'batchNotFound': 'बैच नहीं मिला',
+    'batchIdNotExist': 'यह बैच आईडी हमारे सिस्टम में मौजूद नहीं है।',
+    'pleaseSearchBatchAndSpecifyTransfer': 'कृपया बैच खोजें और स्थानांतरण गंतव्य निर्दिष्ट करें।',
+    
+    // Units
+    'kg': 'किलोग्राम (किलो)',
+    'tons': 'टन',
+    'pounds': 'पाउंड (एलबीएस)',
+    'grams': 'ग्राम (जी)',
+    
+    // Time
+    'today': 'आज',
+    'yesterday': 'कल',
+    'thisWeek': 'इस सप्ताह',
+    'thisMonth': 'इस महीने',
+    'thisYear': 'इस साल',
+    
+    // Actions
+    'register': 'पंजीकृत करें',
+    'update': 'अपडेट करें',
+    'transfer': 'स्थानांतरित करें',
+    'verify': 'सत्यापित करें',
+    'approve': 'अनुमोदित करें',
+    'reject': 'अस्वीकार करें',
+    'review': 'समीक्षा करें',
+    'process': 'प्रक्रिया',
+    'complete': 'पूरा',
+    'incomplete': 'अधूरा',
+    
+    // Status
+    'active': 'सक्रिय',
+    'inactive': 'निष्क्रिय',
+    'processing': 'प्रसंस्करण',
+    'completed': 'पूर्ण',
+    'failed': 'असफल',
+    'cancelled': 'रद्द',
+    
+    // Language Selector
+    'selectLanguage': 'भाषा चुनें',
+    'english': 'English',
+    'hindi': 'हिंदी',
+    'marathi': 'मराठी',
+    
+    // Additional missing keys
+    'paid': 'भुगतान',
+    'harvestPhoto': 'फसल की फोटो',
+    'captureGpsLocation': 'GPS स्थान कैप्चर करें',
+    'findBatchToUpdate': 'अपडेट करने के लिए बैच खोजें',
+    'currentBatchInformation': 'वर्तमान बैच जानकारी',
+    'currentStatus': 'वर्तमान स्थिति',
+    'transferDetails': 'स्थानांतरण विवरण',
+    'updateStatus': 'स्थिति अपडेट करें',
+    'findBatch': 'बैच खोजें',
+    'uploadedLabReports': 'अपलोड किए गए प्रयोगशाला रिपोर्ट',
+    'noLabReportsUploaded': 'अभी तक कोई प्रयोगशाला रिपोर्ट अपलोड नहीं की गई',
+    'batch': 'बैच',
+    'uploaded': 'अपलोड किया गया',
+    'labReportPreview': 'प्रयोगशाला रिपोर्ट पूर्वावलोकन',
+    'uploadedOn': 'अपलोड किया गया',
+    'openPdf': 'PDF खोलें',
+    'batchScanned': 'बैच स्कैन किया गया! ✅',
+    'scanningQrCode': 'QR कोड स्कैन कर रहे हैं...',
+    'positionQrCodeInFrame': 'QR कोड को फ्रेम में रखें',
+    'cancelScan': 'स्कैन रद्द करें',
+    'clickToStartScanning': 'स्कैनिंग शुरू करने के लिए क्लिक करें',
+    'startQrScanner': 'QR स्कैनर शुरू करें',
+    'orEnterManually': 'या मैन्युअल रूप से दर्ज करें',
+    'updateTransferDetailsForBatch': 'इस बैच के लिए स्थानांतरण विवरण अपडेट करें',
+    'currentBatch': 'वर्तमान बैच',
+    'from': 'से',
+    'updatingTransfer': 'स्थानांतरण अपडेट कर रहे हैं...',
+    
+    // Map related translations
+    'selectFarmLocationOnMap': 'मानचित्र पर अपने खेत का स्थान चुनें',
+    'getCurrentLocation': 'वर्तमान स्थान प्राप्त करें',
+    'gettingLocation': 'स्थान प्राप्त कर रहे हैं...',
+    'saveLocation': 'स्थान सहेजें',
+    'locationSelected': 'स्थान चुना गया',
+    'locationSaved': 'स्थान सहेजा गया',
+    'farmLocationSaved': 'खेत का स्थान सहेजा गया है',
+    'clickOnMapToSelectLocation': 'स्थान चुनने के लिए मानचित्र पर क्लिक करें',
+    'useGetCurrentLocationForGPS': 'GPS निर्देशांक के लिए "वर्तमान स्थान प्राप्त करें" का उपयोग करें',
+    'adjustMarkerByDragging': 'आवश्यकता होने पर मार्कर को खींचकर समायोजित करें'
+  },
+  
+  mr: {
+    // Common
+    'welcome': 'स्वागत',
+    'dashboard': 'डॅशबोर्ड',
+    'quickActions': 'द्रुत क्रिया',
+    'recentBatches': 'अलीकडचे बॅच',
+    'viewAll': 'सर्व पहा',
+    'pending': 'प्रलंबित',
+    'verified': 'सत्यापित',
+    'rejected': 'नाकारले',
+    'total': 'एकूण',
+    'earnings': 'कमाई',
+    'status': 'स्थिती',
+    'date': 'तारीख',
+    'quantity': 'प्रमाण',
+    'location': 'स्थान',
+    'notes': 'नोट्स',
+    'submit': 'सबमिट करा',
+    'cancel': 'रद्द करा',
+    'save': 'जतन करा',
+    'edit': 'संपादित करा',
+    'delete': 'हटवा',
+    'view': 'पहा',
+    'search': 'शोधा',
+    'upload': 'अपलोड करा',
+    'download': 'डाउनलोड करा',
+    'preview': 'पूर्वावलोकन',
+    'success': 'यश',
+    'error': 'त्रुटी',
+    'warning': 'चेतावणी',
+    'info': 'माहिती',
+    
+    // Farmer Dashboard
+    'farmerWelcome': 'पुन्हा स्वागत, {name}! 🌱',
+    'farmerSubtitle': 'तुमची पिकाची प्रवास सुरू आहे. तुमचे बॅच आणि कमाई वास्तविक वेळेत ट्रॅक करा.',
+    'totalEarnings': 'एकूण कमाई',
+    'totalBatches': 'एकूण बॅच',
+    'allRegisteredHarvests': 'सर्व नोंदणीकृत पिके',
+    'approvedByDistributors': 'वितरकांनी मंजूर',
+    'awaitingVerification': 'सत्यापनाची प्रतीक्षा',
+    'pendingPayments': 'प्रलंबित',
+    'fastTrackFarming': 'तुमच्या शेतीच्या कार्यांना वेगाने ट्रॅक करा',
+    'registerNewHarvest': 'नवीन पीक नोंदणी करा',
+    'generateQRCodes': 'QR कोड जनरेट करा',
+    'viewAnalytics': 'एनालिटिक्स पहा',
+    'yourLatestRegisteredHarvests': 'तुमची नवीनतम नोंदणीकृत पिके',
+    'verificationRate': 'सत्यापन दर',
+    'batchApprovalSuccessRate': 'बॅच मंजुरी यश दर',
+    'successRate': 'यश दर',
+    'recognition': 'ओळख',
+    'yourEarnedBadgesAndCertifications': 'तुमचे मिळवलेले बॅज आणि प्रमाणपत्रे',
+    'viewAllAchievements': 'सर्व उपलब्धी पहा',
+    
+    // Distributor Dashboard
+    'distributorWelcome': 'गुणवत्ता नियंत्रण केंद्र 🔍',
+    'distributorSubtitle': 'सत्यापनाद्वारे हर्बल उत्पादनांची प्रामाणिकता आणि गुणवत्ता सुनिश्चित करा.',
+    'verificationRate': 'सत्यापन दर',
+    'pendingReview': 'प्रलंबित समीक्षा',
+    'awaitingYourVerification': 'तुमच्या सत्यापनाची प्रतीक्षा',
+    'qualityApproved': 'गुणवत्ता मंजूर',
+    'qualityIssuesFound': 'गुणवत्तेच्या समस्या आढळल्या',
+    'allTimeBatches': 'सर्व काळाचे बॅच',
+    'streamlineVerificationProcess': 'तुमची सत्यापन प्रक्रिया सुव्यवस्थित करा',
+    'scanAndUpdate': 'स्कॅन आणि अपडेट करा',
+    'uploadLabReport': 'प्रयोगशाला अहवाल अपलोड करा',
+    'pendingVerifications': 'प्रलंबित सत्यापने',
+    'batchesAwaitingQualityReview': 'गुणवत्ता समीक्षेची प्रतीक्षा करणारे बॅच',
+    'recentlyVerified': 'अलीकडे सत्यापित',
+    'yourLatestQualityApprovals': 'तुमची नवीनतम गुणवत्ता मंजुरी',
+    'viewHistory': 'इतिहास पहा',
+    'qualityStandards': 'गुणवत्ता मानके',
+    'yourVerificationPerformance': 'तुमचे सत्यापन कार्यक्षमता',
+    'accuracyScore': 'अचूकता स्कोअर',
+    'farmerSatisfaction': 'शेतकरी समाधान',
+    'verificationImpact': 'सत्यापन प्रभाव',
+    'yourContributionToSupplyChain': 'पुरवठा साखळीत तुमचे योगदान',
+    'batchesVerified': 'सत्यापित बॅच',
+    'valueSecured': 'सुरक्षित मूल्य',
+    'farmersSupported': 'समर्थित शेतकरी',
+    
+    // KYC
+    'kycVerification': 'केवायसी पडताळणी',
+    'kycStatus': 'केवायसी स्थिती',
+    'kycPending': 'प्रलंबित',
+    'kycVerified': 'सत्यापित',
+    'kycRejected': 'नाकारले',
+    'completeKycBeforeAction': 'तुम्ही {action} करण्यापूर्वी केवायसी पूर्ण करा',
+    'fullName': 'पूर्ण नाव',
+    'aadhaarPanNumber': 'आधार / पॅन नंबर',
+    'mobileNumber': 'मोबाइल नंबर',
+    'address': 'पत्ता',
+    'idProofUpload': 'आयडी प्रूफ अपलोड (PDF किंवा इमेज)',
+    'companyName': 'कंपनीचे नाव',
+    'gstNumber': 'जीएसटी नंबर',
+    'panNumber': 'पॅन नंबर',
+    'contactPersonName': 'संपर्क व्यक्तीचे नाव',
+    'businessProofUpload': 'आयडी/व्यवसाय प्रूफ अपलोड (PDF किंवा इमेज)',
+    
+    // Harvest Registration
+    'registerHarvest': 'पीक नोंदणी करा',
+    'registerNewHarvest': 'नवीन पीक नोंदणी करा',
+    'cropHerbName': 'पीक/औषधी वनस्पतीचे नाव',
+    'harvestQuantity': 'पिकाचे प्रमाण',
+    'harvestDate': 'पिकाची तारीख',
+    'farmLocation': 'शेताचे स्थान',
+    'harvestRegisteredSuccessfully': '✅ पीक यशस्वीरित्या नोंदवले गेले!',
+    'harvestRegisteredSuccessfullyMessage': 'पीक यशस्वीरित्या नोंदवले गेले!',
+    'viewDetails': 'तपशील पहा',
+    'editUpdate': 'संपादित/अपडेट करा',
+    'viewOnMap': 'नकाशावर पहा',
+    
+    // Batch Management
+    'batchManagement': 'बॅच व्यवस्थापन',
+    'newBatch': 'नवीन बॅच',
+    'updateBatch': 'बॅच अपडेट करा',
+    'batchId': 'बॅच आयडी',
+    'herbType': 'औषधी वनस्पतीचा प्रकार',
+    'transferTo': 'हस्तांतरित करा',
+    'transferType': 'हस्तांतरण प्रकार',
+    'anotherDistributor': 'दुसरा वितरक',
+    'retailer': 'किरकोळ विक्रेता',
+    'consumer': 'ग्राहक',
+    'recipientName': 'प्राप्तकर्त्याचे नाव',
+    'transferNotes': 'हस्तांतरण नोट्स',
+    'updateTransferBatch': 'अपडेट आणि हस्तांतरित बॅच',
+    
+    // Lab Reports
+    'labReportManagement': 'प्रयोगशाला अहवाल व्यवस्थापन',
+    'uploadLabReport': 'प्रयोगशाला अहवाल अपलोड करा',
+    'previewReport': 'अहवाल पूर्वावलोकन',
+    'reportFile': 'अहवाल फाइल',
+    'uploadDate': 'अपलोड तारीख',
+    'labReportAvailable': 'प्रयोगशाला अहवाल उपलब्ध',
+    'noReport': 'कोणताही अहवाल नाही',
+    
+    // Scan & Update
+    'scanAndVerify': 'स्कॅन आणि सत्यापित करा',
+    'scanAndUpdate': 'स्कॅन आणि अपडेट करा',
+    'scanQrCode': 'QR कोड स्कॅन करा',
+    'updateSupplyChainTransfers': 'पुरवठा साखळी हस्तांतरण अपडेट करा',
+    'farmerToDistributor': 'शेतकरी → वितरक',
+    'distributorToAnother': 'वितरक → दुसरा वितरक / किरकोळ विक्रेता / ग्राहक',
+    'updateSupplyChainTraceability': 'पुरवठा साखळी ट्रेसबिलिटी त्यानुसार अपडेट करा',
+    
+    // Messages
+    'harvestRegisteredSuccessfullyFull': 'पीक यशस्वीरित्या नोंदवले गेले!',
+    'batchUpdatedSuccessfully': 'बॅच यशस्वीरित्या अपडेट झाले!',
+    'kycCompletedSuccessfully': 'केवायसी यशस्वीरित्या पूर्ण झाले!',
+    'labReportUploadedSuccessfully': 'प्रयोगशाला अहवाल यशस्वीरित्या अपलोड झाला!',
+    'locationCaptured': 'स्थान कॅप्चर केले',
+    'gpsCoordinatesRecorded': 'GPS निर्देशांक रेकॉर्ड केले गेले आहेत.',
+    'photoUploaded': 'फोटो अपलोड केला',
+    'harvestPhotoAttached': 'पिकाचा फोटो जोडला गेला आहे.',
+    'fileTooLarge': 'फाइल खूप मोठी',
+    'pleaseSelectSmallerImage': 'कृपया 5MB पेक्षा लहान इमेज निवडा.',
+    'geolocationNotSupported': 'जिओलोकेशन समर्थित नाही',
+    'browserNotSupportLocation': 'तुमचा ब्राउझर लोकेशन सेवांचे समर्थन करत नाही.',
+    'locationError': 'स्थान त्रुटी',
+    'unableToGetLocation': 'तुमचे स्थान मिळवू शकत नाही. कृपया लोकेशन सेवा सक्षम असल्याची खात्री करा.',
+    'incompleteInformation': 'अपूर्ण माहिती',
+    'pleaseFillAllRequiredFields': 'कृपया स्थानासह सर्व आवश्यक फील्ड भरा.',
+    'enterBatchId': 'बॅच आयडी प्रविष्ट करा',
+    'pleaseEnterBatchId': 'शोधण्यासाठी कृपया बॅच आयडी प्रविष्ट करा.',
+    'batchFound': 'बॅच सापडला! ✅',
+    'batchNotFound': 'बॅच सापडला नाही',
+    'batchIdNotExist': 'हा बॅच आयडी आमच्या सिस्टममध्ये अस्तित्वात नाही.',
+    'pleaseSearchBatchAndSpecifyTransfer': 'कृपया बॅच शोधा आणि हस्तांतरण गंतव्य निर्दिष्ट करा.',
+    
+    // Units
+    'kg': 'किलोग्राम (किलो)',
+    'tons': 'टन',
+    'pounds': 'पाउंड (एलबीएस)',
+    'grams': 'ग्रॅम (जी)',
+    
+    // Time
+    'today': 'आज',
+    'yesterday': 'काल',
+    'thisWeek': 'या आठवड्यात',
+    'thisMonth': 'या महिन्यात',
+    'thisYear': 'या वर्षी',
+    
+    // Actions
+    'register': 'नोंदणी करा',
+    'update': 'अपडेट करा',
+    'transfer': 'हस्तांतरित करा',
+    'verify': 'सत्यापित करा',
+    'approve': 'मंजूर करा',
+    'reject': 'नाकारा',
+    'review': 'समीक्षा करा',
+    'process': 'प्रक्रिया',
+    'complete': 'पूर्ण',
+    'incomplete': 'अपूर्ण',
+    
+    // Status
+    'active': 'सक्रिय',
+    'inactive': 'निष्क्रिय',
+    'processing': 'प्रक्रिया',
+    'completed': 'पूर्ण',
+    'failed': 'अयशस्वी',
+    'cancelled': 'रद्द',
+    
+    // Language Selector
+    'selectLanguage': 'भाषा निवडा',
+    'english': 'English',
+    'hindi': 'हिंदी',
+    'marathi': 'मराठी',
+    
+    // Additional missing keys
+    'paid': 'पैसे दिले',
+    'harvestPhoto': 'पिकाचा फोटो',
+    'captureGpsLocation': 'GPS स्थान कॅप्चर करा',
+    'findBatchToUpdate': 'अपडेट करण्यासाठी बॅच शोधा',
+    'currentBatchInformation': 'वर्तमान बॅच माहिती',
+    'currentStatus': 'वर्तमान स्थिती',
+    'transferDetails': 'हस्तांतरण तपशील',
+    'updateStatus': 'स्थिती अपडेट करा',
+    'findBatch': 'बॅच शोधा',
+    'uploadedLabReports': 'अपलोड केलेले प्रयोगशाला अहवाल',
+    'noLabReportsUploaded': 'अद्याप कोणतेही प्रयोगशाला अहवाल अपलोड केले नाहीत',
+    'batch': 'बॅच',
+    'uploaded': 'अपलोड केले',
+    'labReportPreview': 'प्रयोगशाला अहवाल पूर्वावलोकन',
+    'uploadedOn': 'अपलोड केले',
+    'openPdf': 'PDF उघडा',
+    'batchScanned': 'बॅच स्कॅन केला! ✅',
+    'scanningQrCode': 'QR कोड स्कॅन करत आहे...',
+    'positionQrCodeInFrame': 'QR कोड फ्रेममध्ये ठेवा',
+    'cancelScan': 'स्कॅन रद्द करा',
+    'clickToStartScanning': 'स्कॅनिंग सुरू करण्यासाठी क्लिक करा',
+    'startQrScanner': 'QR स्कॅनर सुरू करा',
+    'orEnterManually': 'किंवा मॅन्युअली प्रविष्ट करा',
+    'updateTransferDetailsForBatch': 'या बॅचसाठी हस्तांतरण तपशील अपडेट करा',
+    'currentBatch': 'वर्तमान बॅच',
+    'from': 'पासून',
+    'updatingTransfer': 'हस्तांतरण अपडेट करत आहे...',
+    
+    // Map related translations
+    'selectFarmLocationOnMap': 'नकाशावर आपल्या शेताचे स्थान निवडा',
+    'getCurrentLocation': 'वर्तमान स्थान मिळवा',
+    'gettingLocation': 'स्थान मिळवत आहे...',
+    'saveLocation': 'स्थान जतन करा',
+    'locationSelected': 'स्थान निवडले',
+    'locationSaved': 'स्थान जतन केले',
+    'farmLocationSaved': 'शेताचे स्थान जतन केले आहे',
+    'clickOnMapToSelectLocation': 'स्थान निवडण्यासाठी नकाशावर क्लिक करा',
+    'useGetCurrentLocationForGPS': 'GPS निर्देशांकांसाठी "वर्तमान स्थान मिळवा" वापरा',
+    'adjustMarkerByDragging': 'आवश्यक असल्यास मार्कर ड्रॅग करून समायोजित करा'
+  }
+};
+
+export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [language, setLanguage] = useState<Language>('en');
+
+  // Load language from localStorage on mount
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language') as Language;
+    if (savedLanguage && ['en', 'hi', 'mr'].includes(savedLanguage)) {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  // Save language to localStorage when changed
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+  };
+
+  // Translation function with placeholder support
+  const t = (key: string, placeholders?: Record<string, string>): string => {
+    const translation = translations[language][key] || translations.en[key] || key;
+    
+    if (placeholders) {
+      return Object.entries(placeholders).reduce(
+        (str, [placeholder, value]) => str.replace(`{${placeholder}}`, value),
+        translation
+      );
+    }
+    
+    return translation;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
