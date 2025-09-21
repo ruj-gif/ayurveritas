@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import LanguageSelector from '@/components/ui/language-selector';
+import MyBatches from './MyBatches';
 import { 
   Package, 
   Clock, 
@@ -154,62 +155,8 @@ const FarmerDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Batches */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div>
-              <CardTitle className="text-base sm:text-lg">{t('recentBatches')}</CardTitle>
-              <CardDescription className="text-sm">{t('yourLatestRegisteredHarvests')}</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" className="w-full sm:w-auto">
-              {t('viewAll')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 sm:space-y-4">
-            {recentBatches.map((batch) => (
-              <div key={batch.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
-                <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Package className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm sm:text-base truncate">{batch.herbType}</h4>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(batch.harvestDate).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {batch.quantity} {batch.unit}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                  <Badge variant={
-                    batch.status === 'verified' ? 'verified' : 
-                    batch.status === 'pending' ? 'pending' : 'rejected'
-                  } className="text-xs">
-                    {t(batch.status)}
-                  </Badge>
-                  {batch.price && (
-                    <div className="text-right">
-                      <p className="font-medium text-sm sm:text-base">₹{batch.price.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {batch.paymentStatus === 'paid' ? t('paid') : t('pending')}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* My Batches */}
+      <MyBatches />
 
       {/* Performance Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

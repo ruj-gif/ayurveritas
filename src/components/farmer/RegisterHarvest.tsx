@@ -6,12 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { herbTypes } from '@/data/mockData';
 import QRGenerator from '@/components/qr/QRGenerator';
 import HarvestMap from './HarvestMap';
+import EXIF from 'exif-js';
 import { 
   Camera, 
   MapPin, 
@@ -20,13 +22,17 @@ import {
   Plus,
   CheckCircle,
   Upload,
-  Loader2
+  Loader2,
+  X,
+  Eye,
+  Edit
 } from 'lucide-react';
 
 interface HarvestData {
   herbType: string;
   quantity: number;
   unit: string;
+  harvestDate: string;
   photo: string | null;
   location: {
     lat: number;
@@ -34,6 +40,10 @@ interface HarvestData {
     address: string;
   } | null;
   notes: string;
+  exifLocation?: {
+    lat: number;
+    lng: number;
+  } | null;
 }
 
 const RegisterHarvest: React.FC = () => {
@@ -50,10 +60,15 @@ const RegisterHarvest: React.FC = () => {
     herbType: '',
     quantity: 0,
     unit: 'kg',
+    harvestDate: new Date().toISOString().split('T')[0],
     photo: null,
     location: null,
-    notes: ''
+    notes: '',
+    exifLocation: null
   });
+  
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [exifStatus, setExifStatus] = useState<'none' | 'found' | 'not-found'>('none');
 
   const generateBatchId = (): string => {
     const year = new Date().getFullYear();
@@ -78,10 +93,50 @@ const RegisterHarvest: React.FC = () => {
 
       const reader = new FileReader();
       reader.onload = (e) => {
-        setHarvestData(prev => ({
-          ...prev,
-          photo: e.target?.result as string
-        }));
+        const imageData = e.target?.result as string;
+        
+        // Extract EXIF data
+        EXIF.getData(file, function() {
+          const lat = EXIF.getTag(this, "GPSLatitude");
+          const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+          const lng = EXIF.getTag(this, "GPSLongitude");
+          const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
+          
+          let exifLocation = null;
+          let status: 'none' | 'found' | 'not-found' = 'none';
+          
+          if (lat && lng && latRef && lngRef) {
+            // Convert GPS coordinates to decimal degrees
+            const latDecimal = convertDMSToDD(lat, latRef);
+            const lngDecimal = convertDMSToDD(lng, lngRef);
+            
+            exifLocation = {
+              lat: latDecimal,
+              lng: lngDecimal
+            };
+            status = 'found';
+            
+            toast({
+              title: t('exifLocationFound'),
+              description: t('exifDataExtracted'),
+              variant: "default"
+            });
+          } else {
+            status = 'not-found';
+            toast({
+              title: t('exifLocationNotFound'),
+              description: t('fallbackToMapLocation'),
+              variant: "default"
+            });
+          }
+          
+          setHarvestData(prev => ({
+            ...prev,
+            photo: imageData,
+            exifLocation
+          }));
+          setExifStatus(status);
+        });
       };
       reader.readAsDataURL(file);
       
@@ -93,10 +148,19 @@ const RegisterHarvest: React.FC = () => {
     }
   };
 
+  // Helper function to convert GPS coordinates from DMS to decimal degrees
+  const convertDMSToDD = (dms: number[], ref: string): number => {
+    let dd = dms[0] + dms[1]/60 + dms[2]/(60*60);
+    if (ref === "S" || ref === "W") {
+      dd = dd * -1;
+    }
+    return dd;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!harvestData.herbType || !harvestData.quantity || !harvestData.location) {
+    if (!harvestData.herbType || !harvestData.quantity || (!harvestData.location && !harvestData.exifLocation)) {
       toast({
         title: t('incompleteInformation'),
         description: t('pleaseFillAllRequiredFields'),
@@ -113,6 +177,13 @@ const RegisterHarvest: React.FC = () => {
     const batchId = generateBatchId();
     setGeneratedBatchId(batchId);
     
+    // Use EXIF location if available, otherwise use map location
+    const finalLocation = harvestData.location || (harvestData.exifLocation ? {
+      lat: harvestData.exifLocation.lat,
+      lng: harvestData.exifLocation.lng,
+      address: `Farm Location, ${harvestData.exifLocation.lat.toFixed(4)}, ${harvestData.exifLocation.lng.toFixed(4)}`
+    } : null);
+    
     // Simulate blockchain transaction
     const blockchainHash = `0x${Math.random().toString(16).substr(2, 32)}`;
     
@@ -124,8 +195,8 @@ const RegisterHarvest: React.FC = () => {
       herbType: harvestData.herbType,
       quantity: harvestData.quantity,
       unit: harvestData.unit,
-      harvestDate: new Date().toISOString(),
-      location: harvestData.location,
+      harvestDate: harvestData.harvestDate,
+      location: finalLocation,
       status: 'pending' as const,
       qrCode: '', // Will be generated by QRGenerator
       photo: harvestData.photo || undefined,
@@ -138,8 +209,8 @@ const RegisterHarvest: React.FC = () => {
     setIsSubmitted(true);
     
     toast({
-      title: t('harvestRegisteredSuccessfully'),
-      description: `Batch ${batchId} has been created and recorded on the blockchain.`,
+      title: t('harvestRegisteredWithLocationAndImage'),
+      description: `Batch ${batchId} has been created with location and image data.`,
       variant: "default"
     });
   };
@@ -147,13 +218,16 @@ const RegisterHarvest: React.FC = () => {
   const resetForm = () => {
     setIsSubmitted(false);
     setGeneratedBatchId(null);
+    setExifStatus('none');
     setHarvestData({
       herbType: '',
       quantity: 0,
       unit: 'kg',
+      harvestDate: new Date().toISOString().split('T')[0],
       photo: null,
       location: null,
-      notes: ''
+      notes: '',
+      exifLocation: null
     });
   };
 
@@ -257,6 +331,18 @@ const RegisterHarvest: React.FC = () => {
               </Select>
             </div>
 
+            {/* Harvest Date */}
+            <div className="space-y-2">
+              <Label htmlFor="harvestDate">{t('harvestDate')} *</Label>
+              <Input
+                id="harvestDate"
+                type="date"
+                value={harvestData.harvestDate}
+                onChange={(e) => setHarvestData(prev => ({ ...prev, harvestDate: e.target.value }))}
+                max={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
             {/* Quantity and Unit */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -294,24 +380,73 @@ const RegisterHarvest: React.FC = () => {
 
             {/* Photo Upload */}
             <div className="space-y-2">
-              <Label>{t('harvestPhoto')}</Label>
+              <Label>{t('farmImageUpload')}</Label>
               <div className="space-y-4">
                 {harvestData.photo ? (
-                  <div className="relative">
-                    <img 
-                      src={harvestData.photo} 
-                      alt="Harvest preview"
-                      className="w-full h-48 object-cover rounded-lg border"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => setHarvestData(prev => ({ ...prev, photo: null }))}
-                    >
-                      Remove
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <img 
+                        src={harvestData.photo} 
+                        alt="Harvest preview"
+                        className="w-full h-48 object-cover rounded-lg border"
+                      />
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setShowImagePreview(true)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl">
+                            <DialogHeader>
+                              <DialogTitle>{t('imagePreview')}</DialogTitle>
+                            </DialogHeader>
+                            <img 
+                              src={harvestData.photo} 
+                              alt="Full harvest preview"
+                              className="w-full h-auto rounded-lg"
+                            />
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setHarvestData(prev => ({ ...prev, photo: null, exifLocation: null }));
+                            setExifStatus('none');
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* EXIF Status */}
+                    {exifStatus !== 'none' && (
+                      <div className={`p-3 rounded-lg border ${
+                        exifStatus === 'found' 
+                          ? 'bg-success/5 border-success/20 text-success' 
+                          : 'bg-warning/5 border-warning/20 text-warning'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="text-sm font-medium">
+                            {exifStatus === 'found' ? t('exifLocationFound') : t('exifLocationNotFound')}
+                          </span>
+                        </div>
+                        {harvestData.exifLocation && (
+                          <p className="text-xs mt-1">
+                            GPS: {harvestData.exifLocation.lat.toFixed(6)}, {harvestData.exifLocation.lng.toFixed(6)}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div 
@@ -319,8 +454,11 @@ const RegisterHarvest: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-2">Click to upload harvest photo</p>
-                    <p className="text-xs text-muted-foreground">JPG, PNG up to 5MB</p>
+                    <p className="text-muted-foreground mb-2">{t('uploadFarmImage')}</p>
+                    <p className="text-xs text-muted-foreground mb-2">JPG, PNG up to 5MB</p>
+                    <Badge variant="outline" className="text-xs">
+                      {t('geotaggingEnabled')}
+                    </Badge>
                   </div>
                 )}
                 <input
@@ -351,11 +489,6 @@ const RegisterHarvest: React.FC = () => {
               />
             </div>
 
-            {/* Auto Date/Time Display */}
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Calendar className="h-4 w-4" />
-              <span>{t('harvestDate')}: {new Date().toLocaleString()}</span>
-            </div>
 
             {/* Submit Button */}
             <Button 
