@@ -59,7 +59,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
           { icon: <Shield className="h-4 w-4" />, label: 'KYC Verification', path: '/farmer-kyc' },
           { icon: <Package className="h-4 w-4" />, label: 'Register Harvest', path: '/register-harvest' },
           { icon: <QrCode className="h-4 w-4" />, label: 'My Batches', path: '/my-batches' },
-          { icon: <HelpCircle className="h-4 w-4" />, label: 'Help & Training', path: '/help' }
+          { icon: <HelpCircle className="h-4 w-4" />, label: 'Help & Support', path: '/help' }
         ];
       case 'distributor':
         return [

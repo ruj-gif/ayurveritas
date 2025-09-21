@@ -11,6 +11,8 @@ import BatchUpdatePage from "./pages/BatchUpdatePage";
 import LabReportsPage from "./pages/LabReportsPage";
 import ScanUpdatePage from "./pages/ScanUpdatePage";
 import RegisterHarvestPage from "./pages/RegisterHarvestPage";
+import MyBatchesPage from "./pages/MyBatchesPage";
+import HelpPage from "./pages/HelpPage";
 import QRScannerPage from "./pages/QRScannerPage";
 import ProductTracePage from "./pages/ProductTracePage";
 import FarmerKYCPage from "./pages/FarmerKYCPage";
@@ -35,6 +37,8 @@ const App = () => (
               <Route path="/distributor-kyc" element={<DistributorKYCPage />} />
               {/* Farmer Routes */}
               <Route path="/register-harvest" element={<RegisterHarvestPage />} />
+              <Route path="/my-batches" element={<MyBatchesPage />} />
+              <Route path="/help" element={<HelpPage />} />
               <Route path="/farmer-kyc" element={<FarmerKYCPage />} />
               {/* Consumer Routes */}
               <Route path="/scanner" element={<QRScannerPage />} />

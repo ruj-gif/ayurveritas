@@ -1,406 +1,318 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { mockBatches } from '@/data/mockData';
 import { 
   Package, 
-  Calendar, 
-  MapPin, 
+  Search, 
+  Filter, 
   Eye, 
-  Edit, 
+  QrCode, 
+  MapPin, 
+  Calendar, 
+  CheckCircle, 
+  Clock, 
   X,
-  Image as ImageIcon,
+  Download,
   ExternalLink
 } from 'lucide-react';
 
-interface Batch {
-  id: string;
-  farmerId: string;
-  farmerName: string;
-  herbType: string;
-  quantity: number;
-  unit: string;
-  harvestDate: string;
-  location: {
-    lat: number;
-    lng: number;
-    address: string;
-  };
-  status: 'pending' | 'verified' | 'rejected';
-  qrCode: string;
-  photo?: string;
-  verifiedBy?: string;
-  verificationDate?: string;
-  labReport?: string;
-  blockchainHash?: string;
-  price?: number;
-  paymentStatus?: 'pending' | 'paid';
-  rejectionReason?: string;
-}
-
 const MyBatches: React.FC = () => {
-  const { user } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
-  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
-  const [showBatchDetails, setShowBatchDetails] = useState(false);
-  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedBatch, setSelectedBatch] = useState<any>(null);
 
-  const userBatches = mockBatches.filter(batch => batch.farmerId === user?.id);
+  // Filter batches based on search and status
+  const filteredBatches = mockBatches.filter(batch => {
+    const matchesSearch = batch.herbType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         batch.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || batch.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  const handleViewDetails = (batch: Batch) => {
-    setSelectedBatch(batch);
-    setShowBatchDetails(true);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'verified': return 'success';
+      case 'pending': return 'warning';
+      case 'rejected': return 'destructive';
+      default: return 'secondary';
+    }
   };
 
-  const handleEditBatch = (batch: Batch) => {
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'verified': return <CheckCircle className="h-4 w-4" />;
+      case 'pending': return <Clock className="h-4 w-4" />;
+      case 'rejected': return <X className="h-4 w-4" />;
+      default: return <Package className="h-4 w-4" />;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const handleViewDetails = (batch: any) => {
+    setSelectedBatch(batch);
     toast({
-      title: t('editUpdate'),
-      description: `Edit functionality for batch ${batch.id} will be implemented soon.`,
+      title: 'Batch Details',
+      description: `Viewing details for ${batch.id}`,
       variant: "default"
     });
   };
 
-  const handleViewOnMap = (batch: Batch) => {
-    const { lat, lng } = batch.location;
-    const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-    window.open(mapUrl, '_blank');
+  const handleDownloadQR = (batchId: string) => {
+    toast({
+      title: 'QR Code Downloaded',
+      description: `QR code for batch ${batchId} has been downloaded`,
+      variant: "default"
+    });
   };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return 'bg-success/10 text-success border-success/20';
-      case 'pending':
-        return 'bg-warning/10 text-warning border-warning/20';
-      case 'rejected':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      default:
-        return 'bg-muted/10 text-muted-foreground border-muted/20';
-    }
-  };
-
-  if (userBatches.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            {t('myBatches')}
-          </CardTitle>
-          <CardDescription>
-            {t('yourRegisteredHarvestBatches')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground mb-2">
-              {t('noBatchesFound')}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {t('registerYourFirstHarvest')}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            {t('myBatches')}
-          </CardTitle>
-          <CardDescription>
-            {t('yourRegisteredHarvestBatches')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Desktop Table View */}
-            <div className="hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('cropHerbName')}</TableHead>
-                    <TableHead>{t('quantity')}</TableHead>
-                    <TableHead>{t('harvestDate')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                    <TableHead>{t('harvestImage')}</TableHead>
-                    <TableHead className="text-right">{t('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {userBatches.map((batch) => (
-                    <TableRow key={batch.id}>
-                      <TableCell className="font-medium">{batch.herbType}</TableCell>
-                      <TableCell>{batch.quantity} {batch.unit}</TableCell>
-                      <TableCell>{formatDate(batch.harvestDate)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(batch.status)}>
-                          {t(batch.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {batch.photo ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedBatch(batch);
-                              setShowImagePreview(true);
-                            }}
-                          >
-                            <ImageIcon className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDetails(batch)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditBatch(batch)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Package className="h-6 w-6" />
+            My Batches
+          </h1>
+          <p className="text-muted-foreground">
+            Track and manage your registered harvest batches
+          </p>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {filteredBatches.length} batch{filteredBatches.length !== 1 ? 'es' : ''} found
+        </div>
+      </div>
 
-            {/* Mobile Card View */}
-            <div className="md:hidden space-y-3">
-              {userBatches.map((batch) => (
-                <Card key={batch.id} className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{batch.herbType}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {batch.quantity} {batch.unit} • {formatDate(batch.harvestDate)}
-                      </p>
-                    </div>
-                    <Badge className={getStatusColor(batch.status)}>
-                      {t(batch.status)}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {batch.photo && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedBatch(batch);
-                            setShowImagePreview(true);
-                          }}
-                        >
-                          <ImageIcon className="h-4 w-4 mr-1" />
-                          {t('previewFullImage')}
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewOnMap(batch)}
-                      >
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {t('viewOnMap')}
-                      </Button>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDetails(batch)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditBatch(batch)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by herb type or batch ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="w-full sm:w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Batch Details Dialog */}
-      <Dialog open={showBatchDetails} onOpenChange={setShowBatchDetails}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              {t('batchDetails')} - {selectedBatch?.id}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedBatch && (
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    {t('cropHerbName')}
-                  </h4>
-                  <p>{selectedBatch.herbType}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    {t('quantity')}
-                  </h4>
-                  <p>{selectedBatch.quantity} {selectedBatch.unit}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    {t('harvestDate')}
-                  </h4>
-                  <p>{formatDate(selectedBatch.harvestDate)}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    {t('status')}
-                  </h4>
-                  <Badge className={getStatusColor(selectedBatch.status)}>
-                    {t(selectedBatch.status)}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Location Information */}
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                  {t('location')}
-                </h4>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-sm">{selectedBatch.location.address}</p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                    <span>Lat: {selectedBatch.location.lat.toFixed(6)}</span>
-                    <span>Lng: {selectedBatch.location.lng.toFixed(6)}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewOnMap(selectedBatch)}
-                      className="h-6 px-2"
-                    >
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      {t('viewOnMap')}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Harvest Image */}
-              {selectedBatch.photo && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                    {t('harvestImage')}
-                  </h4>
-                  <div className="relative">
-                    <img 
-                      src={selectedBatch.photo} 
-                      alt="Harvest image"
-                      className="w-full h-48 object-cover rounded-lg border"
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => {
-                        setShowBatchDetails(false);
-                        setShowImagePreview(true);
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+      {/* Batches List */}
+      <div className="grid gap-4">
+        {filteredBatches.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No batches found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'Try adjusting your search or filter criteria'
+                  : 'Register your first harvest to get started'
+                }
+              </p>
+              {!searchTerm && statusFilter === 'all' && (
+                <Button>
+                  Register New Harvest
+                </Button>
               )}
+            </CardContent>
+          </Card>
+        ) : (
+          filteredBatches.map((batch) => (
+            <Card key={batch.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  {/* Batch Info */}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg">{batch.id}</h3>
+                        <p className="text-muted-foreground">{batch.herbType}</p>
+                      </div>
+                      <Badge variant={getStatusColor(batch.status)} className="flex items-center gap-1">
+                        {getStatusIcon(batch.status)}
+                        {batch.status.charAt(0).toUpperCase() + batch.status.slice(1)}
+                      </Badge>
+                    </div>
 
-              {/* Verification Information */}
-              {selectedBatch.status === 'verified' && selectedBatch.verifiedBy && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                    {t('verificationDetails')}
-                  </h4>
-                  <div className="p-3 bg-success/5 border border-success/20 rounded-lg">
-                    <p className="text-sm">
-                      <span className="font-medium">{t('verifiedBy')}:</span> {selectedBatch.verifiedBy}
-                    </p>
-                    {selectedBatch.verificationDate && (
-                      <p className="text-sm text-muted-foreground">
-                        {t('verifiedOn')}: {formatDate(selectedBatch.verificationDate)}
-                      </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Quantity</p>
+                        <p className="font-medium">{batch.quantity} {batch.unit}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Harvest Date</p>
+                        <p className="font-medium">{formatDate(batch.harvestDate)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Price</p>
+                        <p className="font-medium">₹{batch.price}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Payment</p>
+                        <Badge variant={batch.paymentStatus === 'paid' ? 'success' : 'warning'}>
+                          {batch.paymentStatus}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {batch.location && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>{batch.location.address}</span>
+                      </div>
+                    )}
+
+                    {batch.verifiedBy && (
+                      <div className="text-sm text-muted-foreground">
+                        <p>Verified by: <span className="font-medium">{batch.verifiedBy}</span></p>
+                        <p>On: <span className="font-medium">{formatDate(batch.verificationDate!)}</span></p>
+                      </div>
+                    )}
+
+                    {batch.rejectionReason && (
+                      <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
+                        <p className="text-sm text-destructive font-medium">Rejection Reason:</p>
+                        <p className="text-sm text-destructive">{batch.rejectionReason}</p>
+                      </div>
                     )}
                   </div>
-                </div>
-              )}
 
-              {/* Rejection Information */}
-              {selectedBatch.status === 'rejected' && selectedBatch.rejectionReason && (
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                    {t('rejectionReason')}
-                  </h4>
-                  <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
-                    <p className="text-sm">{selectedBatch.rejectionReason}</p>
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(batch)}
+                      className="flex items-center gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadQR(batch.id)}
+                      className="flex items-center gap-2"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      QR Code
+                    </Button>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
 
-      {/* Image Preview Dialog */}
-      <Dialog open={showImagePreview} onOpenChange={setShowImagePreview}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{t('imagePreview')}</DialogTitle>
-          </DialogHeader>
-          {selectedBatch?.photo && (
-            <img 
-              src={selectedBatch.photo} 
-              alt="Full harvest preview"
-              className="w-full h-auto rounded-lg"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+      {/* Batch Details Modal */}
+      {selectedBatch && (
+        <Card className="fixed inset-4 z-50 max-w-2xl mx-auto">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Batch Details - {selectedBatch.id}</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedBatch(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Herb Type</p>
+                <p className="font-medium">{selectedBatch.herbType}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Quantity</p>
+                <p className="font-medium">{selectedBatch.quantity} {selectedBatch.unit}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Harvest Date</p>
+                <p className="font-medium">{formatDate(selectedBatch.harvestDate)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Status</p>
+                <Badge variant={getStatusColor(selectedBatch.status)}>
+                  {selectedBatch.status}
+                </Badge>
+              </div>
+            </div>
+            
+            {selectedBatch.location && (
+              <div>
+                <p className="text-sm text-muted-foreground">Location</p>
+                <p className="font-medium">{selectedBatch.location.address}</p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedBatch.location.lat.toFixed(6)}, {selectedBatch.location.lng.toFixed(6)}
+                </p>
+              </div>
+            )}
+
+            {selectedBatch.blockchainHash && (
+              <div>
+                <p className="text-sm text-muted-foreground">Blockchain Hash</p>
+                <p className="font-mono text-xs break-all">{selectedBatch.blockchainHash}</p>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={() => handleDownloadQR(selectedBatch.id)}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download QR
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedBatch(null)}
+              >
+                Close
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

@@ -12,8 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { herbTypes } from '@/data/mockData';
 import QRGenerator from '@/components/qr/QRGenerator';
-import HarvestMap from './HarvestMap';
-import EXIF from 'exif-js';
+import * as EXIF from 'exif-js';
 import { 
   Camera, 
   MapPin, 
@@ -25,7 +24,8 @@ import {
   Loader2,
   X,
   Eye,
-  Edit
+  Edit,
+  Navigation
 } from 'lucide-react';
 
 interface HarvestData {
@@ -47,10 +47,45 @@ interface HarvestData {
 }
 
 const RegisterHarvest: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Debug logging
+  console.log('RegisterHarvest component rendering', { user, isLoading, t });
+  
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading...</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Please wait while we load your information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Handle no user state
+  if (!user) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>Authentication Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Please log in to register a harvest.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -78,7 +113,6 @@ const RegisterHarvest: React.FC = () => {
     return `AYUR-${year}${month}${day}-${random}`;
   };
 
-
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -96,7 +130,7 @@ const RegisterHarvest: React.FC = () => {
         const imageData = e.target?.result as string;
         
         // Extract EXIF data
-        EXIF.getData(file, function() {
+        EXIF.getData(file as any, function() {
           const lat = EXIF.getTag(this, "GPSLatitude");
           const latRef = EXIF.getTag(this, "GPSLatitudeRef");
           const lng = EXIF.getTag(this, "GPSLongitude");
@@ -303,13 +337,18 @@ const RegisterHarvest: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Package className="h-6 w-6 text-primary" />
-            {t('registerNewHarvest')}
+            Register New Harvest
           </CardTitle>
           <CardDescription>
             Record your herbal harvest details and generate a blockchain-verified batch ID
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Welcome {user.name}! Please fill in your harvest details below.
+            </p>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Herb Type Selection */}
             <div className="space-y-2">
@@ -471,11 +510,185 @@ const RegisterHarvest: React.FC = () => {
               </div>
             </div>
 
-            {/* Location Map */}
-            <HarvestMap 
-              onLocationSelect={(location) => setHarvestData(prev => ({ ...prev, location }))}
-              initialLocation={harvestData.location}
-            />
+            {/* Location Input */}
+            <div className="space-y-2">
+              <Label>{t('farmLocation')}</Label>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="latitude">Latitude</Label>
+                    <Input
+                      id="latitude"
+                      type="number"
+                      step="any"
+                      placeholder="e.g., 20.5937"
+                      value={harvestData.location?.lat || ''}
+                      onChange={(e) => {
+                        const lat = parseFloat(e.target.value);
+                        if (!isNaN(lat)) {
+                          setHarvestData(prev => ({
+                            ...prev,
+                            location: {
+                              lat,
+                              lng: prev.location?.lng || 78.9629,
+                              address: prev.location?.address || `Farm Location, ${lat.toFixed(4)}, ${(prev.location?.lng || 78.9629).toFixed(4)}`
+                            }
+                          }));
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="longitude">Longitude</Label>
+                    <Input
+                      id="longitude"
+                      type="number"
+                      step="any"
+                      placeholder="e.g., 78.9629"
+                      value={harvestData.location?.lng || ''}
+                      onChange={(e) => {
+                        const lng = parseFloat(e.target.value);
+                        if (!isNaN(lng)) {
+                          setHarvestData(prev => ({
+                            ...prev,
+                            location: {
+                              lat: prev.location?.lat || 20.5937,
+                              lng,
+                              address: `Farm Location, ${(prev.location?.lat || 20.5937).toFixed(4)}, ${lng.toFixed(4)}`
+                            }
+                          }));
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address (Optional)</Label>
+                  <Input
+                    id="address"
+                    placeholder="Enter farm address or location description"
+                    value={harvestData.location?.address || ''}
+                    onChange={(e) => {
+                      setHarvestData(prev => ({
+                        ...prev,
+                        location: prev.location ? {
+                          ...prev.location,
+                          address: e.target.value
+                        } : null
+                      }));
+                    }}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      // Get current location using browser geolocation
+                      if (navigator.geolocation) {
+                        toast({
+                          title: 'Getting location...',
+                          description: 'Please allow location access when prompted',
+                          variant: "default"
+                        });
+                        
+                        navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                            const { latitude, longitude, accuracy } = position.coords;
+                            setHarvestData(prev => ({
+                              ...prev,
+                              location: {
+                                lat: latitude,
+                                lng: longitude,
+                                address: `GPS Location (Accuracy: ${Math.round(accuracy)}m), ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+                              }
+                            }));
+                            toast({
+                              title: 'Location captured successfully!',
+                              description: `GPS coordinates recorded with ${Math.round(accuracy)}m accuracy`,
+                              variant: "default"
+                            });
+                          },
+                          (error) => {
+                            let errorMessage = 'Unable to get your current location';
+                            switch(error.code) {
+                              case error.PERMISSION_DENIED:
+                                errorMessage = 'Location access denied. Please enable location permissions in your browser.';
+                                break;
+                              case error.POSITION_UNAVAILABLE:
+                                errorMessage = 'Location information is unavailable.';
+                                break;
+                              case error.TIMEOUT:
+                                errorMessage = 'Location request timed out. Please try again.';
+                                break;
+                            }
+                            toast({
+                              title: 'Location Error',
+                              description: errorMessage,
+                              variant: "destructive"
+                            });
+                          },
+                          {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 300000 // 5 minutes
+                          }
+                        );
+                      } else {
+                        toast({
+                          title: 'Geolocation not supported',
+                          description: 'Your browser does not support location services. Please enter coordinates manually.',
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                    className="flex-1"
+                  >
+                    <Navigation className="h-4 w-4 mr-2" />
+                    Get GPS Location
+                  </Button>
+                  
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={() => {
+                      // Set a default location for India
+                      setHarvestData(prev => ({
+                        ...prev,
+                        location: {
+                          lat: 20.5937,
+                          lng: 78.9629,
+                          address: 'Default Farm Location, India (20.5937, 78.9629)'
+                        }
+                      }));
+                      toast({
+                        title: 'Default location set',
+                        description: 'Using default farm location in India',
+                        variant: "default"
+                      });
+                    }}
+                  >
+                    Use Default
+                  </Button>
+                </div>
+
+                {harvestData.location && (
+                  <div className="p-3 bg-success/5 border border-success/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-success mb-2">
+                      <MapPin className="h-4 w-4" />
+                      <span className="font-medium text-sm">Location Selected</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">{harvestData.location.address}</p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>Lat: {harvestData.location.lat.toFixed(6)}</span>
+                      <span>Lng: {harvestData.location.lng.toFixed(6)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Notes */}
             <div className="space-y-2">
@@ -488,7 +701,6 @@ const RegisterHarvest: React.FC = () => {
                 rows={3}
               />
             </div>
-
 
             {/* Submit Button */}
             <Button 

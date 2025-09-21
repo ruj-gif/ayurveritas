@@ -169,6 +169,7 @@ const HarvestMap: React.FC<HarvestMapProps> = ({ onLocationSelect, initialLocati
             zoom={6}
             style={{ height: '100%', width: '100%' }}
             ref={mapRef}
+            key="harvest-map"
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

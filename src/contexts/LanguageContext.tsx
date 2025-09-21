@@ -68,7 +68,6 @@ const translations = {
     // Distributor Dashboard
     'distributorWelcome': 'Quality Control Center 🔍',
     'distributorSubtitle': 'Ensure authenticity and quality of herbal products through verification.',
-    'verificationRate': 'Verification Rate',
     'pendingReview': 'Pending Review',
     'awaitingYourVerification': 'Awaiting your verification',
     'qualityApproved': 'Quality approved',
@@ -112,7 +111,6 @@ const translations = {
     
     // Harvest Registration
     'registerHarvest': 'Register Harvest',
-    'registerNewHarvest': 'Register New Harvest',
     'cropHerbName': 'Crop/Herb Name',
     'harvestQuantity': 'Harvest Quantity',
     'harvestDate': 'Harvest Date',
